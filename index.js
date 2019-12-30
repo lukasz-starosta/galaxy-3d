@@ -14,9 +14,15 @@ var celestials = [];
 // models
 var train;
 
+// textures
+var cat;
+var wood;
+
 function preload() {
   sun.texture = loadImage('images/sun.jpg');
-  // train = loadModel('images/train.obj');
+  train = loadModel('images/train.obj');
+  cat = loadImage('images/cat.jpg');
+  wood = loadImage('images/wood.jpg');
 }
 
 function setup() {
@@ -26,30 +32,39 @@ function setup() {
 
   horizontalMiddle = 0;
   verticalMiddle = 0;
-  screenDiagonal = Math.sqrt(windowHeight ** 2 + windowWidth ** 2);
 
   sun = {
     ...sun,
     x: horizontalMiddle,
     y: verticalMiddle,
-    radius: 40
+    size: 120
   };
 
   const planets = [
-    new Planet('HAT-P-32b', sun, -10, 0, 0.018, 30, color(107, 155, 237)),
-    new Planet('HAT-P-67b', sun, 60, 90, 0.014, 40, color(135, 72, 182)),
-    new Planet('Kepler-13 Ab', sun, 140, 170, 0.01, 50, color(250, 159, 203)),
-    new Planet('GQ Lupi B', sun, 210, 10, 0.006, 60, color(48, 34, 96))
+    new Planet('HAT-P-32b', sun, 30, [1, 0.5, 0], 0.018, 15, color(107, 155, 237)),
+    new Planet('HAT-P-67b', sun, 70, [1, -0.5, 0], 0.014, 18, color(135, 72, 182)),
+    new Planet('Kepler-13 Ab', sun, 110, [0.5, 1, 0], 0.01, 21, color(250, 159, 203)),
+    new CustomPlanetaryObject(
+      'PKP Łódź-Warszawa',
+      sun,
+      150,
+      [-0.5, 1, 0],
+      0.006,
+      train,
+      20,
+      6,
+      wood
+    )
   ];
 
   const moons = [
-    new Moon(planets[0], 0, 10, 0.03, 8, color(217, 231, 255)),
-    new Moon(planets[1], 5, 10, 0.025, 10, color(217, 231, 255)),
-    new Moon(planets[1], 8, 15, 0.02, 12, color(217, 231, 255)),
-    new Moon(planets[2], 30, 10, 0.015, 20, color(217, 231, 255)),
-    new Moon(planets[3], -10, 5, 0.02, 10, color(217, 231, 255)),
-    new Moon(planets[3], 5, 20, 0.035, 15, color(217, 231, 255)),
-    new Moon(planets[3], 35, 40, 0.03, 20, color(217, 231, 255))
+    new Moon(planets[0], 10, [1, 0.5, 0], 0.03, 6, color(217, 231, 255)),
+    new Moon(planets[1], 12, [1, 0.5, 0], 0.025, 8, color(217, 231, 255)),
+    new Moon(planets[1], 25, [0.5, 1, 0], 0.02, 4, color(217, 231, 255)),
+    new Moon(planets[2], 30, [0.5, 1, 0], 0.015, 10, color(217, 231, 255)),
+    new Moon(planets[3], 10, [1, 0.5, 0], 0.02, 5, color(217, 231, 255)),
+    new Moon(planets[3], 20, [0.5, 1, 0], 0.035, 7, color(217, 231, 255)),
+    new Moon(planets[3], 30, [1, -0.5, 0], 0.03, 10, color(217, 231, 255))
   ];
 
   celestials = [...planets, ...moons];
@@ -60,102 +75,132 @@ function draw() {
   currentFrame = getCurrentFrameInSecond();
 
   noStroke();
-  ambientLight(255);
+  ambientLight(150);
   drawStarBackground();
   drawSun();
-  // drawCelestials();
+  drawCelestials();
 }
 
 function drawCelestials() {
   celestials.forEach(celestial => celestial.draw());
 }
 function drawSun() {
-  // pointLight(245, 223, 98, 0, 0, 1500);
-  // ambientMaterial(245, 223, 98);
+  push();
+
+  // TODO: lighting
+  // spotLight(245, 223, 98, horizontalMiddle, verticalMiddle, 1500, 0, 0, -1, 200, 0);
   rotateX(millis() / 3000);
   rotateZ(millis() / 3000);
 
   texture(sun.texture);
-  sphere(sun.radius);
-  // craters
-  // ambientMaterial(245, 201, 98);
-  // ellipse(sun.x - 20, sun.y - 20, 15);
-  // ellipse(sun.x + 15, sun.y - 5, 10);
-  // ellipse(sun.x - 5, sun.y + 15, 5);
+  sphere(sun.size / 2);
+
+  pop();
 }
 
 //blinking stars
 function drawStarBackground() {
-  stars.push(new Star());
+  const newStar = new Star();
+  stars.push(newStar);
+
   stars.filter(star => {
     star.draw();
-    return star.framesAlive === FRAMERATE;
+    if (star.framesAlive === FRAMERATE) {
+      delete star;
+      return false;
+    }
+    return true;
   });
 }
 
 class Celestial {
-  constructor(orbitee, orbitRadius, initialAngle, speed, size, fillColor) {
+  constructor(orbitee, orbitRadius, direction, speed) {
     this.orbitee = orbitee;
     this.orbitRadius = this.orbitee.size + orbitRadius;
-    this.angle = initialAngle;
+    this.angle = 0;
     this.speed = speed;
-    this.size = size;
-    this.fillColor = fillColor;
-
-    this.updatePosition();
-  }
-
-  distanceFromSun() {
-    return Math.sqrt((this.x - sun.x) ** 2 + (this.y - sun.y) ** 2);
-  }
-
-  getDarkness() {
-    return this.distanceFromSun() / (screenDiagonal / 3) - 0.25;
+    this.initialDirection = createVector(...direction);
+    this.translationVector = p5.Vector.mult(this.initialDirection, this.orbitRadius);
   }
 
   updatePosition() {
-    this.x = this.orbitee.x + this.orbitRadius * cos(this.angle);
-    this.y = this.orbitee.y + this.orbitRadius * sin(this.angle);
+    const perpendicularTo2DPLaneVector = createVector(0, 0, 1);
+
+    this.rotationVector = this.translationVector.cross(perpendicularTo2DPLaneVector);
+
+    rotate(this.angle, this.rotationVector);
+    translate(this.translationVector);
   }
 
-  draw(color = this.fillColor) {
+  draw() {
     this.updatePosition();
-    fill(color);
-    ellipse(this.x, this.y, this.size);
+
     this.angle += this.speed;
   }
 }
 
-class Planet extends Celestial {
-  constructor(name, orbitee, orbitRadius, initialAngle, speed, size, fillColor) {
-    super(orbitee, orbitRadius, initialAngle, speed, size, fillColor);
+class CustomPlanetaryObject extends Celestial {
+  constructor(name, orbitee, orbitRadius, initialAngle, speed, model, size, scale, texture) {
+    super(orbitee, orbitRadius, initialAngle, speed);
 
     this.name = name;
+    this.model = model;
+    this.size = size;
+    this.scale = scale;
+    this.texture = texture;
   }
 
   draw() {
+    push();
+
+    // TODO: render name
+
     super.draw();
-    textSize(this.size / 3);
-    fill(230);
-    text(this.name, this.x - this.size, this.y - this.size / 2);
+
+    rotateZ(TWO_PI);
+    texture(this.texture);
+    scale(this.scale);
+    model(this.model);
+
+    pop();
+  }
+}
+
+class Planet extends Celestial {
+  constructor(name, orbitee, orbitRadius, direction, speed, size, texture) {
+    super(orbitee, orbitRadius, direction, speed);
+    this.texture = texture;
+    this.name = name;
+    this.size = size;
+  }
+  draw() {
+    push();
+
+    super.draw();
+    ambientMaterial(this.texture);
+    sphere(this.size);
+
+    pop();
   }
 }
 
 class Moon extends Celestial {
-  constructor(orbitee, orbitRadius, initialAngle, speed, size, fillColor) {
-    super(orbitee, orbitRadius, initialAngle, speed, size, fillColor);
+  constructor(orbitee, orbitRadius, direction, speed, size) {
+    super(orbitee, orbitRadius, direction, speed);
 
-    this.randomPositionX = random(-this.size / 3, this.size / 3);
-    this.randomPositionY = random(-this.size / 3, this.size / 3);
+    this.size = size;
   }
 
   draw() {
-    const col = lerpColor(this.fillColor, color(0), this.getDarkness());
-    super.draw(col);
-    // craters
-    const craterCol = lerpColor(color(169, 183, 207), color(0), this.getDarkness());
-    fill(craterCol);
-    ellipse(this.x + this.randomPositionX, this.y + this.randomPositionY, this.size / 4);
+    push();
+
+    rotate(this.orbitee.angle, this.orbitee.rotationVector);
+    translate(this.orbitee.translationVector);
+    super.draw();
+    normalMaterial();
+    sphere(this.size);
+
+    pop();
   }
 }
 
