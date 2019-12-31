@@ -43,7 +43,7 @@ function setup() {
   const planets = [
     new Planet('HAT-P-32b', sun, 30, [1, 0.5, 0], 0.018, 15, color(107, 155, 237)),
     new Planet('HAT-P-67b', sun, 70, [1, -0.5, 0], 0.014, 18, color(135, 72, 182)),
-    new Planet('Kepler-13 Ab', sun, 110, [0.5, 1, 0], 0.01, 21, color(250, 159, 203)),
+    new Box('Boxy-Boi', sun, 110, [0.5, 1, 0], 0.01, 21, color(250, 159, 203)),
     new CustomPlanetaryObject(
       'PKP Łódź-Warszawa',
       sun,
@@ -58,13 +58,13 @@ function setup() {
   ];
 
   const moons = [
-    new Moon(planets[0], 10, [1, 0.5, 0], 0.03, 6, color(217, 231, 255)),
-    new Moon(planets[1], 12, [1, 0.5, 0], 0.025, 8, color(217, 231, 255)),
-    new Moon(planets[1], 25, [0.5, 1, 0], 0.02, 4, color(217, 231, 255)),
-    new Moon(planets[2], 30, [0.5, 1, 0], 0.015, 10, color(217, 231, 255)),
-    new Moon(planets[3], 10, [1, 0.5, 0], 0.02, 5, color(217, 231, 255)),
-    new Moon(planets[3], 20, [0.5, 1, 0], 0.035, 7, color(217, 231, 255)),
-    new Moon(planets[3], 30, [1, -0.5, 0], 0.03, 10, color(217, 231, 255))
+    new Moon(planets[0], 10, [1, 0.5, 0], 0.03, 6, color(210, 231, 255)),
+    new Moon(planets[1], 12, [1, 0.5, 0], 0.025, 8, color(247, 231, 255)),
+    new Moon(planets[1], 25, [0.5, 1, 0], 0.02, 4, color(217, 251, 255)),
+    new Moon(planets[2], 30, [0.5, 1, 0], 0.015, 10, color(217, 231, 205)),
+    new Moon(planets[3], 10, [1, 0.5, 0], 0.02, 5, color(217, 201, 155)),
+    new Moon(planets[3], 20, [0.5, 1, 0], 0.035, 7, color(217, 221, 255)),
+    new Moon(planets[3], 30, [1, -0.5, 0], 0.03, 10, color(210, 231, 155))
   ];
 
   celestials = [...planets, ...moons];
@@ -167,9 +167,9 @@ class CustomPlanetaryObject extends Celestial {
 }
 
 class Planet extends Celestial {
-  constructor(name, orbitee, orbitRadius, direction, speed, size, texture) {
+  constructor(name, orbitee, orbitRadius, direction, speed, size, color) {
     super(orbitee, orbitRadius, direction, speed);
-    this.texture = texture;
+    this.color = color;
     this.name = name;
     this.size = size;
   }
@@ -177,17 +177,36 @@ class Planet extends Celestial {
     push();
 
     super.draw();
-    ambientMaterial(this.texture);
+    ambientMaterial(this.color);
     sphere(this.size);
 
     pop();
   }
 }
 
+class Box extends Celestial {
+  constructor(name, orbitee, orbitRadius, direction, speed, size, color) {
+    super(orbitee, orbitRadius, direction, speed);
+    this.color = color;
+    this.name = name;
+    this.size = size;
+  }
+  draw() {
+    push();
+
+    super.draw();
+    specularMaterial(this.color);
+    box(this.size, this.size);
+
+    pop();
+  }
+}
+
 class Moon extends Celestial {
-  constructor(orbitee, orbitRadius, direction, speed, size) {
+  constructor(orbitee, orbitRadius, direction, speed, size, color) {
     super(orbitee, orbitRadius, direction, speed);
 
+    this.color = color;
     this.size = size;
   }
 
@@ -197,7 +216,7 @@ class Moon extends Celestial {
     rotate(this.orbitee.angle, this.orbitee.rotationVector);
     translate(this.orbitee.translationVector);
     super.draw();
-    normalMaterial();
+    ambientMaterial(this.color);
     sphere(this.size);
 
     pop();
