@@ -41,9 +41,9 @@ function setup() {
   };
 
   const planets = [
-    new Planet('HAT-P-32b', sun, 30, [1, 0.5, 0], 0.018, 15, color(107, 155, 237)),
-    new Planet('HAT-P-67b', sun, 70, [1, -0.5, 0], 0.014, 18, color(135, 72, 182)),
-    new Box('Boxy-Boi', sun, 110, [0.5, 1, 0], 0.01, 21, color(250, 159, 203)),
+    new Planet('HAT-P-32b', sun, 30, [1, 0.5, 0], 0.018, 15, color(77, 36, 143)),
+    new Planet('HAT-P-67b', sun, 70, [1, -0.5, 0], 0.014, 18, color(70, 162, 227)),
+    new Box('Boxy-Boi', sun, 110, [0.5, 1, 0], 0.01, 50, color(140, 105, 10)),
     new CustomPlanetaryObject(
       'PKP Łódź-Warszawa',
       sun,
@@ -58,13 +58,13 @@ function setup() {
   ];
 
   const moons = [
-    new Moon(planets[0], 10, [1, 0.5, 0], 0.03, 6, color(210, 231, 255)),
-    new Moon(planets[1], 12, [1, 0.5, 0], 0.025, 8, color(247, 231, 255)),
-    new Moon(planets[1], 25, [0.5, 1, 0], 0.02, 4, color(217, 251, 255)),
-    new Moon(planets[2], 30, [0.5, 1, 0], 0.015, 10, color(217, 231, 205)),
-    new Moon(planets[3], 10, [1, 0.5, 0], 0.02, 5, color(217, 201, 155)),
-    new Moon(planets[3], 20, [0.5, 1, 0], 0.035, 7, color(217, 221, 255)),
-    new Moon(planets[3], 30, [1, -0.5, 0], 0.03, 10, color(210, 231, 155))
+    new Moon(planets[0], 10, [1, 0.5, 0], 0.03, 6, color(89, 89, 89)),
+    new Moon(planets[1], 12, [1, 0.5, 0], 0.025, 8, color(130, 130, 130)),
+    new Moon(planets[1], 25, [0.5, 1, 0], 0.02, 4, color(163, 163, 163)),
+    new Moon(planets[2], 30, [0.5, 1, 0], 0.015, 10, color(110, 110, 110)),
+    new Moon(planets[3], 10, [1, 0.5, 0], 0.02, 5, color(156, 146, 128)),
+    new Moon(planets[3], 20, [0.5, 1, 0], 0.035, 7, color(97, 88, 69)),
+    new Moon(planets[3], 30, [1, -0.5, 0], 0.03, 10, color(140, 134, 121))
   ];
 
   celestials = [...planets, ...moons];
@@ -75,27 +75,17 @@ function draw() {
   currentFrame = getCurrentFrameInSecond();
 
   noStroke();
-  ambientLight(150);
+
+  drawLights();
   drawStarBackground();
   drawSun();
   drawCelestials();
 }
 
-function drawCelestials() {
-  celestials.forEach(celestial => celestial.draw());
-}
-function drawSun() {
-  push();
+function drawLights() {
+  ambientLight(100);
 
-  // TODO: lighting
-  // spotLight(245, 223, 98, horizontalMiddle, verticalMiddle, 1500, 0, 0, -1, 200, 0);
-  rotateX(millis() / 3000);
-  rotateZ(millis() / 3000);
-
-  texture(sun.texture);
-  sphere(sun.size / 2);
-
-  pop();
+  directionalLight(150, 150, 150, 1, 1, -1);
 }
 
 //blinking stars
@@ -111,6 +101,24 @@ function drawStarBackground() {
     }
     return true;
   });
+}
+
+function drawSun() {
+  pointLight(255, 214, 99, horizontalMiddle, verticalMiddle, 150);
+
+  push();
+
+  rotateX(millis() / 3000);
+  rotateZ(millis() / 3000);
+
+  texture(sun.texture);
+  sphere(sun.size / 2);
+
+  pop();
+}
+
+function drawCelestials() {
+  celestials.forEach(celestial => celestial.draw());
 }
 
 class Celestial {
@@ -153,8 +161,6 @@ class CustomPlanetaryObject extends Celestial {
   draw() {
     push();
 
-    // TODO: render name
-
     super.draw();
 
     rotateZ(TWO_PI);
@@ -192,6 +198,7 @@ class Box extends Celestial {
     this.size = size;
   }
   draw() {
+    spotLight(0, 79, 1, this.translationVector, 0, 0, 1);
     push();
 
     super.draw();
