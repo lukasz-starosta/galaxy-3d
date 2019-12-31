@@ -15,13 +15,14 @@ var celestials = [];
 var train;
 
 // textures
-var cat;
 var wood;
+
+// spaceship
+var spaceship;
 
 function preload() {
   sun.texture = loadImage('images/sun.jpg');
   train = loadModel('images/train.obj');
-  cat = loadImage('images/cat.jpg');
   wood = loadImage('images/wood.jpg');
 }
 
@@ -39,6 +40,8 @@ function setup() {
     y: verticalMiddle,
     size: 120
   };
+
+  spaceship = new Spaceship();
 
   const planets = [
     new Planet('HAT-P-32b', sun, 30, [1, 0.5, 0], 0.018, 15, color(77, 36, 143)),
@@ -76,10 +79,23 @@ function draw() {
 
   noStroke();
 
+  orbitControl();
   drawLights();
   drawStarBackground();
   drawSun();
   drawCelestials();
+  // // Update position
+  // spaceship.update();
+  // // Draw spaceship
+  // spaceship.display();
+
+  // if (keyIsDown(LEFT_ARROW)) {
+  //   spaceship.turn(-0.03);
+  // } else if (keyIsDown(RIGHT_ARROW)) {
+  //   spaceship.turn(0.03);
+  // } else if (keyIsDown(UP_ARROW)) {
+  //   spaceship.thrust();
+  // }
 }
 
 function drawLights() {
@@ -198,7 +214,6 @@ class Box extends Celestial {
     this.size = size;
   }
   draw() {
-    spotLight(0, 79, 1, this.translationVector, 0, 0, 1);
     push();
 
     super.draw();
@@ -232,20 +247,92 @@ class Moon extends Celestial {
 
 class Star {
   constructor() {
-    this.x = random(width);
-    this.y = random(height);
+    this.x = random(-width, width);
+    this.y = random(-height, height);
+    this.z = random(-1000, 1000);
     this.size = random(1, 3);
     this.t = random(TAU);
     this.framesAlive = 0;
   }
 
   draw() {
+    push();
     this.framesAlive++;
     const scale = this.size + sin(this.t) * 2;
     noStroke();
     const starFill = color(240);
     starFill.setAlpha(150 - Math.abs(FRAMERATE / 2 - this.framesAlive) * 6);
     fill(starFill);
-    ellipse(this.x - width / 2, this.y - height / 2, scale, scale);
+    translate(createVector(this.x, this.y, this.z));
+    sphere(scale);
+
+    pop();
+  }
+}
+
+// Spaceship
+class Spaceship {
+  constructor() {
+    this.position = createVector(horizontalMiddle, verticalMiddle, 0);
+    this.velocity = createVector();
+    this.acceleration = createVector();
+
+    // Arbitrary damping to slow down ship
+    this.damping = 0.995;
+    this.topspeed = 6;
+
+    // Variable for heading!
+    this.heading = 0;
+
+    // Size
+    this.r = 16;
+
+    this.thrusting;
+  }
+
+  update() {
+    this.velocity.add(this.acceleration);
+    this.velocity.mult(this.damping);
+    this.velocity.limit(this.topspeed);
+    this.position.add(this.velocity);
+    this.acceleration.mult(0);
+  }
+
+  // Newton's law: F = M * A
+  applyForce(force) {
+    let f = force.copy();
+    //f.div(mass); // ignoring mass
+    this.acceleration.add(f);
+  }
+
+  // Turn changes angle
+  turn(a) {
+    // TODO: 3d - this has to be a vector
+    this.heading += a;
+  }
+
+  // Apply a thrust force
+  thrust() {
+    // Offset the angle since we drew the ship vertically
+    let angle = this.heading - PI / 2;
+    // Polar to cartesian for force vector!
+    let force = p5.Vector.fromAngle(angle);
+    force.mult(0.1);
+    this.applyForce(force);
+
+    force.mult(-2);
+
+    // To draw booster
+    this.thrusting = true;
+  }
+
+  // Draw the ship
+  display() {
+    push();
+    normalMaterial();
+    cone(40, 20);
+    pop();
+
+    this.thrusting = false;
   }
 }
