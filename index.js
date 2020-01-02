@@ -385,8 +385,6 @@ class Spaceship {
           .mult(-1)
       );
 
-      console.log(this.cameraPosition);
-
       mouseXOnClick = mouseX;
       mouseYOnClick = mouseY;
     }
