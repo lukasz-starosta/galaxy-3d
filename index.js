@@ -20,6 +20,15 @@ var wood;
 // spaceship
 var spaceship;
 
+// mouse related variables
+var mouseYOnClick, mouseYPositionDifference;
+var mouseXOnClick, mouseXPositionDifference;
+
+function mousePressed() {
+  mouseXOnClick = mouseX;
+  mouseYOnClick = mouseY;
+}
+
 function preload() {
   sun.texture = loadImage('images/sun.jpg');
   train = loadModel('images/train.obj');
@@ -30,6 +39,9 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   frameRate(FRAMERATE);
   setAttributes('perPixelLighting', true);
+
+  mouseXOnClick = mouseX;
+  mouseYOnClick = mouseY;
 
   horizontalMiddle = 0;
   verticalMiddle = 0;
@@ -79,23 +91,26 @@ function draw() {
 
   noStroke();
 
-  orbitControl();
   drawLights();
   drawStarBackground();
   drawSun();
   drawCelestials();
-  // // Update position
-  // spaceship.update();
-  // // Draw spaceship
-  // spaceship.display();
 
-  // if (keyIsDown(LEFT_ARROW)) {
-  //   spaceship.turn(-0.03);
-  // } else if (keyIsDown(RIGHT_ARROW)) {
-  //   spaceship.turn(0.03);
-  // } else if (keyIsDown(UP_ARROW)) {
-  //   spaceship.thrust();
-  // }
+  if (keyIsDown(LEFT_ARROW)) {
+    spaceship.left();
+  }
+  if (keyIsDown(RIGHT_ARROW)) {
+    spaceship.right();
+  }
+  if (keyIsDown(UP_ARROW)) {
+    spaceship.forward();
+  }
+  if (keyIsDown(DOWN_ARROW)) {
+    spaceship.back();
+  }
+
+  // Draw spaceship
+  spaceship.display();
 }
 
 function drawLights() {
@@ -273,66 +288,136 @@ class Star {
 // Spaceship
 class Spaceship {
   constructor() {
-    this.position = createVector(horizontalMiddle, verticalMiddle, 0);
-    this.velocity = createVector();
-    this.acceleration = createVector();
+    this.velocity = 5;
 
-    // Arbitrary damping to slow down ship
-    this.damping = 0.995;
-    this.topspeed = 6;
+    // start at the middle of the screen with offset of 200 from the center (towards user)
+    this.initialZOffset = 200;
+    this.position = createVector(horizontalMiddle, verticalMiddle, this.initialZOffset);
 
-    // Variable for heading!
-    this.heading = 0;
+    this.cameraDistance = this.initialZOffset + 200;
+    // set the camera's position to this.cameraDistace behind the spaceship position
+    this.cameraPosition = createVector(0, 0, this.cameraDistance);
 
-    // Size
-    this.r = 16;
-
-    this.thrusting;
+    // create a vector pointing from camera to the spaceship
+    this.directionVector = this.cameraPosition.copy().sub(this.position);
   }
 
-  update() {
-    this.velocity.add(this.acceleration);
-    this.velocity.mult(this.damping);
-    this.velocity.limit(this.topspeed);
-    this.position.add(this.velocity);
-    this.acceleration.mult(0);
+  forward() {
+    // make a unit vector out of direction
+    const normalizedDirectionVector = this.directionVector.copy().normalize();
+
+    // ensure the ship is going forward initially
+    normalizedDirectionVector.z =
+      normalizedDirectionVector.z >= 0 ? -normalizedDirectionVector.z : normalizedDirectionVector.z;
+    const replacementVector = normalizedDirectionVector.mult(this.velocity);
+    console.log(replacementVector);
+
+    this.position.add(replacementVector);
+    this.cameraPosition.add(replacementVector);
   }
 
-  // Newton's law: F = M * A
-  applyForce(force) {
-    let f = force.copy();
-    //f.div(mass); // ignoring mass
-    this.acceleration.add(f);
+  back() {
+    // make a unit vector out of direction
+    const normalizedDirectionVector = this.directionVector.copy().normalize();
+
+    // ensure the ship is going forward initially
+    normalizedDirectionVector.z =
+      normalizedDirectionVector.z >= 0 ? -normalizedDirectionVector.z : normalizedDirectionVector.z;
+    const replacementVector = normalizedDirectionVector.mult(this.velocity);
+
+    // subtract the replacement vector to move backwards
+    this.position.sub(replacementVector);
+    this.cameraPosition.sub(replacementVector);
   }
 
-  // Turn changes angle
-  turn(a) {
-    // TODO: 3d - this has to be a vector
-    this.heading += a;
+  right() {
+    // make a unit vector out of direction
+    const normalizedDirectionVector = this.directionVector.copy().normalize();
+
+    // interpolate the unit vector with the right vector to ensure the ship is going right
+    const interpolatedVector = normalizedDirectionVector.lerp(createVector(1, 0, 0), 0.5);
+    const replacementVector = interpolatedVector.mult(this.velocity);
+
+    this.position.add(replacementVector);
+    this.cameraPosition.add(replacementVector);
   }
 
-  // Apply a thrust force
-  thrust() {
-    // Offset the angle since we drew the ship vertically
-    let angle = this.heading - PI / 2;
-    // Polar to cartesian for force vector!
-    let force = p5.Vector.fromAngle(angle);
-    force.mult(0.1);
-    this.applyForce(force);
+  left() {
+    // make a unit vector out of direction
+    const normalizedDirectionVector = this.directionVector.copy().normalize();
 
-    force.mult(-2);
+    // interpolate the unit vector with the right vector to ensure the ship is going right
+    const interpolatedVector = normalizedDirectionVector.lerp(createVector(1, 0, 0), 0.5);
+    const replacementVector = interpolatedVector.mult(this.velocity);
 
-    // To draw booster
-    this.thrusting = true;
+    this.position.sub(replacementVector);
+    this.cameraPosition.sub(replacementVector);
   }
 
   // Draw the ship
   display() {
-    push();
-    normalMaterial();
-    cone(40, 20);
-    pop();
+    if (mouseIsPressed) {
+      mouseXPositionDifference = mouseX - mouseXOnClick;
+      mouseYPositionDifference = mouseY - mouseYOnClick;
 
-    this.thrusting = false;
+      const cameraTranslation = createVector(mouseXPositionDifference, mouseYPositionDifference, 0);
+
+      if (this.cameraPosition.x > this.cameraDistance) {
+        this.cameraPosition.x = this.cameraDistance;
+      } else if (this.cameraPosition.x < -this.cameraDistance) {
+        this.cameraPosition.x = -this.cameraDistance;
+      }
+
+      if (this.cameraPosition.y > this.cameraDistance) {
+        this.cameraPosition.y = this.cameraDistance;
+      } else if (this.cameraPosition.y < -this.cameraDistance) {
+        this.cameraPosition.y = -this.cameraDistance;
+      }
+
+      // subtract - dont invert camera with respect to mouse, move camera back the translation vector
+      this.cameraPosition.sub(cameraTranslation);
+
+      // set the direction vector as the *difference* between camera position and position vectors
+      this.directionVector.set(
+        this.cameraPosition
+          .copy()
+          .sub(this.position)
+          .mult(-1)
+      );
+
+      console.log(this.cameraPosition);
+
+      mouseXOnClick = mouseX;
+      mouseYOnClick = mouseY;
+    }
+
+    const displaySpaceship = () => {
+      translate(0, 40, 0);
+      translate(0, -20, 0);
+      cone(40, 20);
+      rotateX(radians(180));
+      translate(0, 20, 0);
+      cone(40, 20);
+    };
+
+    camera(
+      this.cameraPosition.x,
+      this.cameraPosition.y,
+      this.cameraPosition.z,
+      this.position.x,
+      this.position.y,
+      this.position.z,
+      0,
+      1,
+      0
+    );
+
+    push();
+
+    translate(this.position);
+    normalMaterial();
+
+    displaySpaceship();
+    pop();
   }
 }
