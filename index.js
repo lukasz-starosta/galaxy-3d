@@ -386,12 +386,41 @@ class Spaceship {
     }
 
     const displaySpaceship = () => {
-      translate(0, 40, 0);
-      translate(0, -20, 0);
+      // top cylinder
+      push();
+      ambientMaterial(201, 201, 201);
+      translate(0, -30, 0);
+      cylinder(6, 3);
+      pop();
+
+      // top cone
+      push();
+      ambientMaterial(4, 191, 88);
+      translate(0, 5, 0);
       cone(40, 20);
+      pop();
+
+      // middle cylinder
+      push();
+      ambientMaterial(201, 201, 201);
+      translate(0, -10, 0);
+      cylinder(30, 10);
+      pop();
+
+      // bottom cone
+      push();
+      ambientMaterial(4, 191, 88);
       rotateX(radians(180));
       translate(0, 20, 0);
       cone(40, 20);
+      pop();
+
+      // bottom cylinder
+      push();
+      ambientMaterial(201, 201, 201);
+      translate(0, 15, 0);
+      cylinder(6, 3);
+      pop();
     };
 
     camera(
@@ -409,9 +438,9 @@ class Spaceship {
     push();
 
     translate(this.position);
-    normalMaterial();
 
     displaySpaceship();
+
     pop();
   }
 }
