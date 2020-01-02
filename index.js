@@ -121,17 +121,11 @@ function drawLights() {
 
 //blinking stars
 function drawStarBackground() {
-  const newStar = new Star();
-  stars.push(newStar);
-
-  stars.filter(star => {
-    star.draw();
-    if (star.framesAlive === FRAMERATE) {
-      delete star;
-      return false;
-    }
-    return true;
-  });
+  if (stars.length < 100) {
+    const newStar = new Star();
+    stars.push(newStar);
+  }
+  stars.forEach(star => star.draw());
 }
 
 function drawSun() {
@@ -267,12 +261,11 @@ class Star {
     this.z = random(-1000, 1000);
     this.size = random(1, 3);
     this.t = random(TAU);
-    this.framesAlive = 0;
+    this.framesAlive = random(0, 15);
   }
 
   draw() {
     push();
-    this.framesAlive++;
     const scale = this.size + sin(this.t) * 2;
     noStroke();
     const starFill = color(240);
@@ -282,6 +275,9 @@ class Star {
     sphere(scale);
 
     pop();
+
+    if (this.framesAlive / 2 > FRAMERATE) this.framesAlive = random(0, 15);
+    else this.framesAlive++;
   }
 }
 
