@@ -305,7 +305,6 @@ class Spaceship {
     normalizedDirectionVector.z =
       normalizedDirectionVector.z >= 0 ? -normalizedDirectionVector.z : normalizedDirectionVector.z;
     const replacementVector = normalizedDirectionVector.mult(this.velocity);
-    console.log(replacementVector);
 
     this.position.add(replacementVector);
     this.cameraPosition.add(replacementVector);
