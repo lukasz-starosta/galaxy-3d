@@ -12,10 +12,10 @@ var sun = {};
 var celestials = [];
 
 // models
-var train;
+var cybertruck;
 
 // textures
-var wood;
+var metal;
 
 // spaceship
 var spaceship;
@@ -31,8 +31,8 @@ function mousePressed() {
 
 function preload() {
   sun.texture = loadImage('images/sun.jpg');
-  train = loadModel('images/train.obj');
-  wood = loadImage('images/wood.jpg');
+  cybertruck = loadModel('images/cybertruck.obj');
+  metal = loadImage('images/metal.jpg');
 }
 
 function setup() {
@@ -65,10 +65,10 @@ function setup() {
       150,
       [-0.5, 1, 0],
       0.006,
-      train,
+      cybertruck,
       20,
-      6,
-      wood
+      0.1,
+      metal
     )
   ];
 
@@ -188,7 +188,6 @@ class CustomPlanetaryObject extends Celestial {
 
     super.draw();
 
-    rotateZ(TWO_PI);
     texture(this.texture);
     scale(this.scale);
     model(this.model);
